@@ -1,6 +1,6 @@
 # CellComm_ccRCC
 
-This repository host the R scripts used in the paper "Systems analysis of cell communication identifies angiogenin-dependent modulation of tumor proliferation and inflammation in clear cell renal cell carcinoma".
+This repository hosts the R scripts used in the paper "Systems analysis of cell communication identifies angiogenin-dependent modulation of tumor proliferation and inflammation in clear cell renal cell carcinoma".
 
 ## Index:
 ICELLNET ligand/receptor interaction database used in the scripts can be found on ICELLNET github.
@@ -32,7 +32,7 @@ Cell cell communication analysis using [ICELLNET package](https://github.com/sou
 ### 05a_scRNAseq_Young_data:
 Reanalysis of [Young et al. data](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6104812/)
 
-### 05b_ICELLNET_Young_data
+### 05b_ICELLNET_Young_data:
 Cell cell communication analysis to identify tumor cell specific interactions.
 
 
