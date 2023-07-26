@@ -11,6 +11,7 @@ library(FactoMineR)
 library(dendextend)
 library(gridExtra)
 library(DESeq2)
+library(reshape2)
 
 
 # 1 - Create metadata file from downloaded info
@@ -141,58 +142,50 @@ rownames(norm.data)=res.sig$hgnc_symbol
 save(norm.data, file="TCGA_all_samples_normDESeq2.Rdata")
 
 
-# 5 - TCGA communication gene analysis - bulk global communication score
+# 5 - TCGA communication gene expression analysis - for Supplementary Figure S3D
 #--------------------------------------------
-rm(list=ls())
-load("target_all_param_20191030.Rdata")
-load( "target_all_reduced_20191030.Rdata")
-load("TCGA_all_samples_normDESeq2.Rdata") #norm.data
+db_list=as.data.frame(readxl::read_excel("~/Desktop/LR_selected_DB.xlsx"))
+rownames(db_list)= db_list$Pair
+data.scale= t(apply(matrix, MARGIN=1,  FUN = function(x) (x/max(x)))) 
 
+# COMPUTE multiplication for each LR pair
+mult=matrix(nrow = dim(db_list)[1],  ncol = dim(data.scale)[2])
+colnames(mult)=colnames(data.scale)
+rownames(mult)=rownames(db_list)
 
-target=target.all.reduced
-rownames(target)=target$Sample.ID
-target=filter(target.all.param,target.all.param$Sample.Type%in% c("Solid Tissue Normal","Primary Tumor") 
-              & !(Project.ID %in% c("TCGA-DLBC", "TCGA-LGG","TCGA-OV", "TCGA-CESC", "TCGA-GBM", "TCGA-CESC", "TCGA-PAAD", "TCGA-SARC", "TCGA-SKCM"))) #no control of not enough controls (<10...)
-rownames(target)=target$Sample.ID
+for (j in 1:dim(db_list)[1]){
+  pair=db_list[j,"Pair"]
+  ligand=db_list[j,"Ligand"]
+  if (is.na(db_list[j,"Rec_2"])){
+    receptor=db_list[j,"Rec_1"]
+  } else { receptor=c(db_list[j,"Rec_1"],  db_list[j,"Rec_2"])}
+  data_meta = data.scale[which(rownames(data.scale) %in% c(ligand, receptor)), ]
+  if (is.na(db_list[j,"Rec_2"])){
+    mult[pair,]=data_meta[which(rownames(data_meta)== ligand), ]* data_meta[which(rownames(data_meta)== db_list[j,"Rec_1"]),]
+  } else {
+    mult[pair,]=data_meta[which(rownames(data_meta)== ligand), ]* sqrt(data_meta[which(rownames(data_meta)== db_list[j,"Rec_1"]),] * data_meta[which(rownames(data_meta)== db_list[j,"Rec_2"]),])
+  }
+}
 
-head(norm.data[1:5,1:5])
-data2=norm.data[,which(colnames(norm.data)%in%as.character(target$Sample.ID))]
+mult_df=as.data.frame(reshape2::melt(mult))
+colnames(mult_df)=c("Pair", "Sample.ID", "value")
+mult_df=dplyr::right_join(mult_df, target[,c("Sample.ID", "Sample.Type")])
+mult_df$Sample.Type=as.character(mult_df$Sample.Type)
 
-# Extract cytokines and cytokines receptors genes from data matrix
-cytokines=readxl::read_excel("../Liste_molecules.xlsx", sheet="Cytokines")
-receptors=readxl::read_excel("../Liste_molecules.xlsx", sheet="Cyt_receptors")
-checkpoints=readxl::read_excel("../Liste_molecules.xlsx", sheet="Checkpoints")
-chemo=readxl::read_excel("../Liste_molecules.xlsx", sheet="Chemokines")
+# Compute logFC 
+test2= mult_df %>% group_by(Pair, Sample.Type, .add=T) %>% summarise_if(is.numeric, mean, na.rm=TRUE)
+test3 = test2 %>% reshape2::dcast(Pair ~ Sample.Type) 
+test3$FC = test3$`Primary Tumor` / test3$`Solid Tissue Normal`
+test3$log2FC = log2(test3$FC)
 
-#all cyt or rec 
-cyt_oi=cytokines %>%  pull(Symbol)  %>% unique()
-rec_oi=receptors %>%  pull(Symbol)  %>% unique()
-check_oi= checkpoints %>%  pull(Symbol)  %>% unique()
-chemo_oi=chemo %>%  pull(Symbol)  %>% unique()
-all=unique(c(cyt_oi, rec_oi, check_oi,  chemo_oi))  # to change according to plot of interest
+#compute pvalue
+stat= ggpubr::compare_means(value ~ Sample.Type, data = mult_df, group.by = "Pair", method = "wilcox.test", p.adjust.method = "bonferroni")
+all(stat$Pair == test3$Pair) #check
+test3$padj=stat$p.adj
 
-#Extract molecules genes 
-data.cyt=as.data.frame(data2) %>% filter(rownames(data2) %in% all)
-metagene.cyt=data.frame("Sample.ID"=colnames(data.cyt) ,"score"=colSums(data.cyt)) 
-target$Project.ID= sapply(strsplit(as.character(target$Project.ID), split='-', fixed=TRUE), function(x) (x[2]))
-metagene.cyt=dplyr::right_join(metagene.cyt,target[,c("Sample.ID","Project.ID", "Sample.Type")])
-str(metagene.cyt)
-summary(metagene.cyt)
-
-
-#Exclude metastasis - keep only Solid tissue normal and Primary tumors
-test=metagene.cyt%>%
-  group_by(Project.ID, Sample.Type)%>% 
-  summarise(Mean=mean(score), Median=median(score))
-
-test2=test%>%
-  group_by(Project.ID) %>%
-  mutate(deltaMed = Median[Sample.Type == 'Primary Tumor'] - Median[Sample.Type == 'Solid Tissue Normal']) %>%
-  mutate(deltaMean = Mean[Sample.Type == 'Primary Tumor'] - Mean[Sample.Type == 'Solid Tissue Normal'])%>%
-  filter(Sample.Type=="Primary Tumor")
-
-# Figure 1A
-ggplot(test2, aes(x=deltaMed, y=Median, color=Project.ID, label=Project.ID)) + 
-  geom_point() + ggrepel::geom_text_repel(size=3) + theme_classic() + theme(legend.position = "none") + 
-  labs(x = "Score difference between tumor and healthy", y = "Median of communication score",  title = "Comm mol") 
-
+#volcano plot
+EnhancedVolcano::EnhancedVolcano(test3,lab = test3$Pair,
+                                 x = 'log2FC',
+                                 y = 'padj', 
+                                 FCcutoff = 1, legendPosition = "top", labSize = 5 , pointSize = 4 , pCutoff = 0.001, 
+                                 drawConnectors = TRUE, widthConnectors = 0.25,  axisLabSize = 10)

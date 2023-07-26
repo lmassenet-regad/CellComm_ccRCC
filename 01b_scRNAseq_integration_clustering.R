@@ -178,16 +178,16 @@ seurat$Celltype_Harmony[Idents(seurat)=="2"] = "PT_MT1G"
 seurat$Celltype_Harmony[Idents(seurat)=="3"] = "PT_GPX3"
 seurat$Celltype_Harmony[Idents(seurat)=="4"] = "NK_T"
 seurat$Celltype_Harmony[Idents(seurat)=="5"] = "NK"
-seurat$Celltype_Harmony[Idents(seurat)=="6"] = "MMAC_VCAN"
-seurat$Celltype_Harmony[Idents(seurat)=="7"] = "MMAC_FCGR3A"
+seurat$Celltype_Harmony[Idents(seurat)=="6"] = "Mono_c"
+seurat$Celltype_Harmony[Idents(seurat)=="7"] = "Mono_nc"
 seurat$Celltype_Harmony[Idents(seurat)=="8"] = "cDC2"
-seurat$Celltype_Harmony[Idents(seurat)=="9"] = "TumC"
+seurat$Celltype_Harmony[Idents(seurat)=="9"] = "ccRCC"
 seurat$Celltype_Harmony[Idents(seurat)=="10"] = "NK_CD160"
 seurat$Celltype_Harmony[Idents(seurat)=="11"] = "B_cell"
 seurat$Celltype_Harmony[Idents(seurat)=="12"] = "Prolif"
 seurat$Celltype_Harmony[Idents(seurat)=="13"] = "Mast"
 seurat$Celltype_Harmony[Idents(seurat)=="14"] = "Neutrop"
-seurat$Celltype_Harmony[Idents(seurat)=="15"] = "MMAC_C1QA"
+seurat$Celltype_Harmony[Idents(seurat)=="15"] = "Mac_C1QA"
 seurat$Celltype_Harmony[Idents(seurat)=="16"] = "Treg"
 seurat$Celltype_Harmony[Idents(seurat)=="17"] = "Epith"
 seurat$Celltype_Harmony[Idents(seurat)=="18"] = "pDC"
@@ -196,97 +196,6 @@ seurat$Celltype_Harmony[Idents(seurat)=="20"] = "PlasmaC"
 seurat$Celltype_Harmony[Idents(seurat)=="21"] = "Endoth"
 seurat$Celltype_Harmony[Idents(seurat)=="22"] = "Fibro"
 
-pdf(file = paste0(output.dir, "04_Final_plots_Integration_HARMONY_UMAP_res",res, "_PC",n.dims,"_",Sys.Date(),".pdf"), useDingbats = F, width = 8, height = 8 )
-DimPlot(seurat, reduction = "harmony_umap", label = T, label.size = 4) + labs(title= "res 0.7")
-DimPlot(seurat, reduction = "harmony_umap", group.by = "orig.ident", label = F, label.size = 4) 
-DimPlot(seurat, reduction = "harmony_umap", group.by = "Tissue", label = F, label.size = 4) 
-DimPlot(seurat, reduction = "harmony_umap", group.by = "Patient", label = F, label.size = 4) 
-DimPlot(seurat, reduction = "harmony_umap", group.by = "Celltype_Harmony", label = F, label.size = 4) 
-FeaturePlot(seurat, reduction = "harmony_umap", features = "nCount_RNA")
-FeaturePlot(seurat, reduction = "harmony_umap", features = "nFeature_RNA")
-
-pt=as.data.frame(table(Idents(seurat), seurat$orig.ident))
-pt$Var2=factor(pt$Var2, levels =c("LM022_Tum","LM027_Tum", "LM029_Tum","LM022_Hty","LM027_Hty","LM029_Hty"))
-pt$Var3=substr(pt$Var2, 7,9)
-
-ggplot(pt, aes(x = Freq , y = Var1 , fill = Var2)) +
-  theme_bw(base_size = 15) +
-  geom_col(position = "fill", width = 0.5) +
-  ylab("Cell type") +
-  xlab("Proportion or each sample") +
-  theme(legend.title = element_blank(), axis.text.x = element_text(angle=0, hjust = 1))
-
-ggplot(pt, aes(x = Freq , y = Var1 , fill = Var3)) +
-  theme_bw(base_size = 15) +
-  geom_col(position = "fill", width = 0.5) +
-  ylab("Cell type") +
-  xlab("Proportion or each sample") +
-  theme(legend.title = element_blank(), axis.text.x = element_text(angle=0, hjust = 1)) 
-
-
-pt=as.data.frame(table(seurat$Celltype_Harmony, seurat$orig.ident))
-pt$Var2=factor(pt$Var2, levels =c("LM022_Tum","LM027_Tum","LM022_Hty","LM027_Hty", "LM029_Tum","LM029_Hty"))
-pt$Var3=substr(pt$Var2, 7,9)
-
-ggplot(pt, aes(x = Freq , y = Var1 , fill = Var2)) +
-  theme_bw(base_size = 15) +
-  geom_col(position = "fill", width = 0.5) +
-  ylab("Cell type") +
-  xlab("Proportion or each sample") +
-  theme(legend.title = element_blank(), axis.text.x = element_text(angle=0, hjust = 1))
-
-ggplot(pt, aes(x = Freq , y = Var1 , fill = Var3)) +
-  theme_bw(base_size = 15) +
-  geom_col(position = "fill", width = 0.5) +
-  ylab("Cell type") +
-  xlab("Proportion or each sample") +
-  theme(legend.title = element_blank(), axis.text.x = element_text(angle=0, hjust = 1)) 
-
-dev.off()
-
-
-pdf(file = paste0(output.dir, "04_Final_plots_SplitTissue_Integration_LM022_27_29_Harmony_UMAP_res",res, "_PC",n.dims,"_",Sys.Date(),".pdf"), useDingbats = F, width = 14, height = 8 )
-DimPlot(seurat, reduction = "harmony_umap", split.by = "Tissue") 
-DimPlot(seurat, reduction = "harmony_umap", group.by = "Celltype_Harmony", split.by = "Tissue")
-DimPlot(seurat, reduction = "harmony_umap", group.by = "Patient", split.by = "Tissue")
-dev.off()
-
-pdf(file = paste0(output.dir, "04_Final_plots_QC_",Sys.Date(),".pdf"), useDingbats = F, width = 14, height = 8)
-VlnPlot(seurat, features = "nFeature_RNA" , pt.size=0.01, split.by =  "Tissue", group.by="Celltype_Harmony")
-VlnPlot(seurat, features = "nCount_RNA" , pt.size=0.0, split.by =  "Tissue", group.by="Celltype_Harmony") + scale_y_log10() 
-VlnPlot(seurat, features = "percent.mt", pt.size=0.01, split.by =  "Tissue", group.by="Celltype_Harmony")
-VlnPlot(seurat, features = "percent.rb" , pt.size=0.01, split.by =  "Tissue", group.by="Celltype_Harmony")
-dev.off()
-
-pdf(file = paste0(output.dir, "04_Final_cells_QC_metrics",Sys.Date(),".pdf"), useDingbats = F, width = 14, height = 15)
-metadata <- as.data.frame(seurat@meta.data)
-metadata %>%  ggplot(aes(color=orig.ident, x=nCount_RNA, fill= orig.ident)) + 
-  geom_density(alpha = 0.2) + 
-  scale_x_log10() + 
-  theme_classic() +
-  ylab("Cell density") +
-  geom_vline(xintercept = 800)+
-  annotate("text", x=1000, y=1, label= paste0(round((sum(metadata$nCount_RNA<800)/dim(metadata)[1])*100,0), ' %') )
-
-metadata %>%  ggplot(aes(color=orig.ident, x=nCount_RNA, fill=orig.ident)) + 
-  geom_density(alpha = 0.2) + 
-  scale_x_log10() + 
-  theme_classic() +
-  ylab("Cell density") +
-  geom_vline(xintercept = 1000)+
-  facet_wrap(~ Celltype_Harmony, ncol=3)
-
-
-metadata %>%  ggplot(aes(color=orig.ident, x=nFeature_RNA, fill= orig.ident)) + 
-  geom_density(alpha = 0.2) + 
-  scale_x_log10() + 
-  theme_classic() +
-  ylab("Cell density") +
-  geom_vline(xintercept = 200) +
-  annotate("text", x=100, y=1, label= paste0(round((sum(metadata$nFeature_RNA<200)/dim(metadata)[1])*100,0), ' %') )
-dev.off()
-
-write.csv(table( seurat$Celltype_Harmony, seurat$orig.ident), file= paste0(output.dir, "04_Table_CCA_clustering",res,"_RNAassay_",Sys.Date(),".csv"))
 
 #SAVE DATA
 saveRDS(seurat, paste0("data/ccRCC_nCount1000_integrated_Harmony_res1_PC50_",Sys.Date(),".rds"))
@@ -301,64 +210,113 @@ library(dplyr)
 library(ggplot2)
 library(ggpattern)
 
-DimPlot(seurat, reduction="harmony_umap", label=T, group.by="RNA_snn_res.1") + NoLegend() # Figure 1C
+#### Figure 1B ####
+DimPlot(seurat, reduction="harmony_umap", label=T, group.by="RNA_snn_res.1") + NoLegend() 
 
-#Supp Figure 2A - BEFORE AND AFTER HARMONY
+#### Figure 1C & 1D ####
+listes_goi=readxl::read_excel("~/Liste_broad_communication_molecules.csv")
+
+meta.data=FetchData(object = seurat, slot="data", assay="RNA",  vars = c("Tissue", "Celltype_Harmony"))
+meta.data$Sample.ID=rownames(meta.data)
+seurat.com = DietSeurat(seurat, features = GOI, data = TRUE, scale.data =T,  counts = T, assays ="RNA") # 549 over 604 unique genes detected
+data=as.data.frame(seurat.com[["RNA"]]@data)
+data.tum=data[,meta.data$Sample.ID[which(meta.data$Tissue=="Tum")]]
+
+names=unique(meta.data$Celltype_Harmony)
+names=names[order(names)]
+
+score.mat=matrix(ncol = dim(listes_goi)[2], nrow =  length(names))
+colnames(score.mat)=colnames(listes_goi)
+rownames(score.mat)=names
+
+for (i in colnames(listes_goi)){
+  
+  data.oi= data.tum %>% filter(rownames(data) %in% as.character(unlist(listes_goi[i]))) 
+  metagene=data.frame("Sample.ID"=colnames(data.oi) ,"score"=colSums(data.oi)) 
+  metagene=left_join(metagene, meta.data)
+  median.matrix = metagene %>%
+    group_by(Celltype_Harmony, Tissue, .add=T) %>%
+    summarise_if(is.numeric, median, na.rm=TRUE)
+  rownames(median.matrix)=paste0(median.matrix$Celltype_Harmony)
+  median.matrix=median.matrix[names,]
+  
+  score.mat[,i]=median.matrix$score
+}
+
+score.mat= score.mat[complete.cases(score.mat),]
+heat.data = apply(score.mat, MARGIN=2, FUN = function(x) (x-mean(x))/sd(x)) # center reduction step
+
+ht1=ComplexHeatmap::Heatmap(t(heat.data), cluster_rows = T, cluster_columns = T ,
+                            show_column_dend = TRUE , show_row_dend = T, show_column_names = T,  show_row_names = T, name = "z-score")
+ht1 # Figure 1C
+ht1 = draw(ht1)
+rows=row_dend(ht1) 
+cols=column_dend(ht1)
+order_row=rownames(t(heat.data))[unlist(rows)]
+order_cols=colnames(t(heat.data))[unlist(cols)]
+
+# For Figure 1D
+score.mat2=matrix(ncol = dim(listes_goi)[2], nrow =  length(names))
+colnames(score.mat2)=colnames(listes_goi)
+rownames(score.mat2)=names
+
+score.pvalue=matrix(ncol = dim(listes_goi)[2], nrow =  length(names))
+colnames(score.pvalue)=colnames(listes_goi)
+rownames(score.pvalue)=names
+
+for (i in colnames(listes_goi)){
+  data.oi= data %>% filter(rownames(data) %in% as.character(unlist(listes_goi[i])))
+  metagene=data.frame("Sample.ID"=colnames(data.oi) ,"score"=colSums(data.oi)) 
+  metagene=left_join(metagene, meta.data)
+  median.matrix = metagene %>%
+    group_by(Celltype_Harmony, Tissue, .add=T) %>%
+    summarise_if(is.numeric, median, na.rm=TRUE)
+  
+  test=reshape2::dcast(median.matrix, formula = Celltype_Harmony ~ 
+                         Tissue , value.var = "score", drop = T) 
+  rownames(test)= test$Celltype_Harmony
+
+  test["ccRCC", "Hty"]=median(x=metagene$score[which(metagene$Celltype_Harmony %in% c("PT_GPX3", "PT_MT1G") & metagene$Tissue =="Hty")])
+  metagene.ccRCC=filter(metagene, (metagene$Celltype_Harmony %in% c("PT_GPX3", "PT_MT1G") & metagene$Tissue =="Hty") | (metagene$Celltype_Harmony=="ccRCC"))
+  
+  test$ratio=test$Tum/test$Hty
+  anno_df=ggpubr::compare_means(formula=score~Tissue, data=metagene,  group.by="Celltype_Harmony", p.adjust.method = "none")
+  test=left_join(test, anno_df[c("Celltype_Harmony", "p")])
+  rownames(test)= test$Celltype_Harmony
+  test["ccRCC", "p"]=wilcox.test(formula=score~Tissue, data=metagene.ccRCC)$p.value
+  test$p.adjust=p.adjust(test$p, method = "fdr")
+  
+  write.csv(test, paste0("analyses/3_Downstream_analysis/0_comparison_scores_pvalue_",i,"_", Sys.Date() ,".csv"))
+  score.mat2[,i]=test$ratio
+  score.pvalue[,i]=test$p.adjust
+}
+
+log2score=log2(score.mat2)
+
+ht3=ComplexHeatmap::Heatmap(t(log2score), row_order = order_row, column_order = order_cols, 
+                            show_column_dend = TRUE , show_row_dend = T, show_column_names = T,  show_row_names = T, name = "log2FC", cell_fun = function(j, i, x, y, w, h, fill){
+                              if (t(score.pvalue)[i, j] < 0.001 & abs(t(log2score)[i,j])>0.25 ) {
+                                grid.text("***", x, y)
+                              } else if(t(score.pvalue)[i, j] < 0.01 & abs(t(log2score)[i,j])>0.25) {
+                                grid.text("**", x, y)
+                              }
+                            }) #highlight significant and abs(logFC) >0.25
+ht3 # Figure 1D
+
+
+
+
+
+#### Supp Figure S1C #### 
 display.brewer.pal(n = 6, name = 'RdBu', )
 brewer.pal(n = 6, name = 'RdBu')
 DimPlot(seurat, reduction = "harmony_umap", group.by = 'orig.ident', pt.size = 0.1, label=FALSE,
         cols = c("LM022_Hty"="#2166AC","LM022_Tum"="#B2182B", "LM027_Hty"= "#67A9CF", 
                  "LM027_Tum"="#EF8A62", "LM029_Hty"=  "#D1E5F0"  , "LM029_Tum"="#FDDBC7" ))
 
-
-# Supp Figure 2B
-Idents(seurat)=seurat$RNA_snn_res.1
-markers=read.csv("05_DEG_Harmony_Markers_res1_RNAassay2022-02-08.csv", header = T)
-rownames(markers)=markers$X
-markers=markers[,-1]
-markers %>% filter(p_val_adj<=0.05 & avg_log2FC > 1) %>% group_by(cluster) %>% top_n(3, avg_log2FC) -> filter.markers
-seurat.test.averages = AverageExpression(seurat, return.seurat = TRUE)
-seurat.test.averages = ScaleData(seurat.test.averages, features = filter.markers$gene, assay = "RNA")
-DoHeatmap(seurat.test.averages, features = filter.markers$gene, assay = "RNA", raster = FALSE, draw.lines = FALSE) + scale_fill_gradientn(colors = c("blue", "white", "red")) 
-
-#Supp Figure 2C - Repartition per sample / per cluster
+#### Supp Figure S1D #### 
 pt=as.data.frame(table(seurat$Celltype_Harmony, seurat$Tissue, seurat$Patient))
-ggplot(pt , aes(y = Var1 , x = ifelse(test = Var2 == "Tum", yes = Freq, no = -Freq), fill = Var3, pattern=Var2)) +
-  geom_col_pattern(color = "black",
-                   pattern_fill = "black",
-                   pattern_angle = 45,
-                   pattern_density = 0.1,
-                   pattern_spacing = 0.025,
-                   pattern_key_scale_factor = 0.6) +
-  scale_pattern_manual(values = c(Tum = "stripe", Hty = "none")) +
-  guides(pattern = guide_legend(override.aes = list(fill = "white")),
-         fill = guide_legend(override.aes = list(pattern = "none"))) +
-  theme_bw(base_size = 15) +
-  ylab("Cell type") +
-  xlab("Proportion or each sample") +
-  theme(legend.title = element_blank(), axis.text.x = element_text(angle=0, hjust = 1))
-
-
-ggplot(pt , aes(y = Var1 , x = Freq, fill = Var3, pattern=Var2)) +
-  geom_col_pattern(color = "black",
-                   pattern_fill = "black",
-                   pattern_angle = 45,
-                   pattern_density = 0.1,
-                   pattern_spacing = 0.025,
-                   pattern_key_scale_factor = 0.6) +
-  scale_pattern_manual(values = c(Tum = "stripe", Hty = "none")) +
-  guides(pattern = guide_legend(override.aes = list(fill = "white")),
-         fill = guide_legend(override.aes = list(pattern = "none"))) +
-  theme_bw(base_size = 15) +
-  ylab("Cell type") +
-  xlab("Proportion or each sample") +
-  theme(legend.title = element_blank(), axis.text.x = element_text(angle=0, hjust = 1))
-
-
-head(pt)
 pt$Var4=paste0(pt$Var2, "_", pt$Var3)
-
-head(pt2)
 
 ggplot(pt , aes(x = Var1 , y = Freq , fill = Var4)) +
   geom_col(position = "fill", width = 0.5)+
@@ -367,57 +325,15 @@ ggplot(pt , aes(x = Var1 , y = Freq , fill = Var4)) +
   ylab("Proportion or each sample") +
   theme(legend.title = element_blank(), axis.text.x = element_text(angle=45, hjust = 1))+
   scale_fill_brewer(palette = "RdBu", direction = -1)
-# scale_color_manual(values = brewer.pal(n = 6, name = "RdBu"))
 
 
-# Figure 1D
-
-cytokines=readxl::read_excel("../Liste_molecules.xlsx", sheet="Cytokines")
-receptors=readxl::read_excel("../Liste_molecules.xlsx", sheet="Cyt_receptors")
-checkpoints=readxl::read_excel("../Liste_molecules.xlsx", sheet="Checkpoints")
-chemokines=readxl::read_excel("../Liste_molecules.xlsx", sheet="Chemokines")
-GOI=unique(c(unique(receptors$Symbol), unique(cytokines$Symbol), unique(chemokines$Symbol),unique(checkpoints$Symbol)))
-
-meta.data=FetchData(object = seurat, slot="data", assay="RNA",  vars = c("Tissue", "Celltype_Harmony"))
-meta.data$Sample.ID=rownames(meta.data)
-data=as.data.frame(seurat[["RNA"]]@data)
-data=data %>% filter(rownames(data) %in% GOI)
-head(rownames(data))
-
-family="receptors"
-if (family=="checkpoints"){
-  list=checkpoints$Symbol
-}else if (family=="chemokines"){
-  list=chemokines$Symbol
-}else if (family=="cytokines"){
-  list=cytokines$Symbol
-}else if (family=="receptors"){
-  list=receptors$Symbol
-}else {print("not correct family name")}
-
-data.oi=data %>% filter(rownames(data) %in% list ) # 63 chemokines detected
-metagene.chemo=data.frame("Sample.ID"=colnames(data.oi) ,"score"=colSums(data.oi)) 
-metagene.chemo=left_join(metagene.chemo, meta.data)
-
-#heatmap
-median.matrix = metagene.chemo %>%
-  group_by(Celltype_Harmony, Tissue, .add=T) %>%
-  summarise_if(is.numeric, median, na.rm=TRUE)
-test=reshape2::dcast(median.matrix, formula = Celltype_Harmony ~ 
-                       Tissue , value.var = "score", drop = T) 
-rownames(test)= test$Celltype_Harmony
-test$ratio=test$Tum/test$Hty
-test$log2FC=log2(test$ratio)
-test
-write.csv(test, paste0("analyses/3_Downstream_analysis/0_Scores_results_",family,".csv"))
-
-col_fun = circlize::colorRamp2(c(round(min(test[,2:3])), round(min(test[,2:3]) + (max(test[,2:3]) -min(test[,2:3]))/2), round(max(test[,2:3]))), c("blue","white", "red"))
-ht1=Heatmap(as.matrix(test[,2:3]), cluster_rows = T, cluster_columns = F, name=family,
-            show_column_dend = TRUE , show_row_dend = T, show_column_names = T,  show_row_names = T, col = col_fun)
-ht1
-
-#add pvalue info + save file
-anno_df=ggpubr::compare_means(formula=score~Tissue, data=metagene.chemo,  group.by="Celltype_Harmony",  p.adjust.method="BH" )  %>%
-  mutate(Family = family)
-write.csv(anno_df, paste0("analyses/3_Downstream_analysis/0_comparison_scores_pvalue_",family,".csv"))
+#### Supp Figure S1E #### 
+Idents(seurat)=seurat$RNA_snn_res.1
+markers=read.csv("05_DEG_Harmony_Markers_res1_RNAassay2022-02-08.csv", header = T)
+rownames(markers)=markers$X
+markers=markers[,-1]
+markers %>% filter(p_val_adj<=0.05 & avg_log2FC > 1) %>% group_by(cluster) %>% top_n(3, avg_log2FC) -> filter.markers
+seurat.test.averages = AverageExpression(seurat, return.seurat = TRUE)
+seurat.test.averages = ScaleData(seurat.test.averages, features = filter.markers$gene, assay = "RNA")
+DoHeatmap(seurat.test.averages, features = filter.markers$gene, assay = "RNA", raster = FALSE, draw.lines = FALSE) + scale_fill_gradientn(colors = c("blue", "white", "red")) 
 

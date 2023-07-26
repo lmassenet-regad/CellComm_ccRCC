@@ -284,33 +284,34 @@ DotPlot(seurat, features=as.vector(genes.IMM), assay = "RNA") + RotatedAxis()
 dev.off()
 
 #Cluster assignment - res 0.7 - Harmony batch correction - by Experiment
-seurat$Celltype_CCA = NA
-seurat$Celltype_CCA[Idents(seurat)=="0"] = "PT_MT1G"
-seurat$Celltype_CCA[Idents(seurat)=="1"] = "CD8T_ex"
-seurat$Celltype_CCA[Idents(seurat)=="2"] = "CD4T"
-seurat$Celltype_CCA[Idents(seurat)=="3"] = "NK"
-seurat$Celltype_CCA[Idents(seurat)=="4"] = "Endoth_1"
-seurat$Celltype_CCA[Idents(seurat)=="5"] = "PT_GPX3"
-seurat$Celltype_CCA[Idents(seurat)=="6"] = "MMAC_VCAN"
-seurat$Celltype_CCA[Idents(seurat)=="7"] = "MMAC_DC"
-seurat$Celltype_CCA[Idents(seurat)=="8"] = "TumC_1"
-seurat$Celltype_CCA[Idents(seurat)=="9"] = "Unassign"
-seurat$Celltype_CCA[Idents(seurat)=="10"] = "Treg"
-seurat$Celltype_CCA[Idents(seurat)=="11"] = "TumC_2"
-seurat$Celltype_CCA[Idents(seurat)=="12"] = "Endoth_2"
-seurat$Celltype_CCA[Idents(seurat)=="13"] = "NK_CD160"
-seurat$Celltype_CCA[Idents(seurat)=="14"] = "MMAC_FCN1"
-seurat$Celltype_CCA[Idents(seurat)=="15"] = "Epith"
-seurat$Celltype_CCA[Idents(seurat)=="16"] = "Fibro"
-seurat$Celltype_CCA[Idents(seurat)=="17"] = "Endoth_3"
-seurat$Celltype_CCA[Idents(seurat)=="18"] = "Epith"
-seurat$Celltype_CCA[Idents(seurat)=="19"] = "Endoth_4"
-seurat$Celltype_CCA[Idents(seurat)=="20"] = "PlasmaC"
-seurat$Celltype_CCA[Idents(seurat)=="21"] = "Epith"
-seurat$Celltype_CCA[Idents(seurat)=="22"] = "Prolif"
-seurat$Celltype_CCA[Idents(seurat)=="23"] = "RBC"
-seurat$Celltype_CCA[Idents(seurat)=="24"] = "Mast"
-seurat$Celltype_CCA[Idents(seurat)=="24"] = "CD4T"
+seurat$Celltype_Harmony = NA
+seurat$Celltype_Harmony[Idents(seurat)=="0"] = "CD8T"
+seurat$Celltype_Harmony[Idents(seurat)=="1"] = "PT_GPX3"
+seurat$Celltype_Harmony[Idents(seurat)=="2"] = "CD4T"
+seurat$Celltype_Harmony[Idents(seurat)=="3"] = "NK"
+seurat$Celltype_Harmony[Idents(seurat)=="4"] = "PT_MT1G"
+seurat$Celltype_Harmony[Idents(seurat)=="5"] = "Endoth"
+seurat$Celltype_Harmony[Idents(seurat)=="6"] = "Unassign"
+seurat$Celltype_Harmony[Idents(seurat)=="7"] = "Mac_C1QA"
+seurat$Celltype_Harmony[Idents(seurat)=="8"] = "Mono_c"
+seurat$Celltype_Harmony[Idents(seurat)=="9"] = "TumC_1"
+seurat$Celltype_Harmony[Idents(seurat)=="10"] = "Treg"
+seurat$Celltype_Harmony[Idents(seurat)=="11"] = "TumC_2"
+seurat$Celltype_Harmony[Idents(seurat)=="12"] = "Endoth"
+seurat$Celltype_Harmony[Idents(seurat)=="13"] = "NK_CD160"
+seurat$Celltype_Harmony[Idents(seurat)=="14"] = "Mono_nc"
+seurat$Celltype_Harmony[Idents(seurat)=="15"] = "Epith"
+seurat$Celltype_Harmony[Idents(seurat)=="16"] = "Fibro"
+seurat$Celltype_Harmony[Idents(seurat)=="17"] = "Endoth"
+seurat$Celltype_Harmony[Idents(seurat)=="18"] = "Endoth"
+seurat$Celltype_Harmony[Idents(seurat)=="19"] = "PlasmaC"
+seurat$Celltype_Harmony[Idents(seurat)=="20"] = "Epith"
+seurat$Celltype_Harmony[Idents(seurat)=="21"] =  "RBC"
+seurat$Celltype_Harmony[Idents(seurat)=="22"] = "Epith"
+seurat$Celltype_Harmony[Idents(seurat)=="23"] = "Prolif"
+seurat$Celltype_Harmony[Idents(seurat)=="24"] = "Mast"
+seurat$Celltype_Harmony[Idents(seurat)=="25"] = "Unassign"
+
 
 seurat$Tissue=seurat$TissueDiseaseState
 seurat$Patient=seurat$Experiment
@@ -395,7 +396,7 @@ dev.off()
 
 write.csv(table( seurat$Celltype_CCA, seurat$batch), file= paste0(output.dir, "06_Table_CCA_clustering",res,"_RNAassay_",Sys.Date(),".csv"))
 
-# #SAVE DATA !!!
+# #SAVE DATA 
 saveRDS(seurat, paste0("data/ccRCC_Young_integrated_Harmony_2_res0.7_PC50_",Sys.Date(),".rds"))
 
 

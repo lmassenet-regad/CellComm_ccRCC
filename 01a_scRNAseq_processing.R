@@ -1,6 +1,6 @@
-#Lucile Massenet-Regad 
+#Author: Lucile Massenet-Regad 
 #Created 2021-05-17
-# inspired from pipeline script at SincellTE2022
+#inspired from pipeline script at SincellTE2022
 
 rm(list=ls())
 work.dir=work.dir
