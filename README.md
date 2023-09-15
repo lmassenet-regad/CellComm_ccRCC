@@ -17,13 +17,13 @@ Input: processed individual scRNAseq data
 
 
 Output: one merged scRNAseq with integrated samples and consensus clustering.
-This script also contains code for the Figure 1B-1D and Supp. Figure S1.
+This script also contains code for the Figure 1 and  Figure S1.
 
 ### 02_scRNAseq_cancer_cell_analysis:
 Input: merged scRNAseq with integrated samples and consensus clustering 
-- A: Clustering of cancer cells (ccRCC1 and ccRCC2) + differential expression analysis (Figure 2A-C, Supplementary Table S3A)
-- B:  Analysis of differential expression between ccRCC2 and proximal tubules (PT) from juxtatumoral samples (Supplementary Table S3B)
-- C: Identification of cancer cell specific genes compared to all other clusters in the dataset, in tumoral samples (Figure 2D)
+- A: Clustering of cancer cells (ccRCC1 and ccRCC2) + differential expression analysis (Figure 2A-D, Figure S2A, Table S4)
+- B:  Analysis of differential expression between ccRCC2 and proximal tubules (PT) from juxtatumoral samples (Table S5)
+- C: Identification of cancer cell specific genes compared to all other clusters in the dataset, in tumoral samples (Figure 2E)
 
 ### 03_scRNAseq_ICELLNET:
 Input: merged scRNAseq with integrated samples and consensus clustering +  ICELLNET ligand/receptor interaction database
@@ -45,10 +45,10 @@ Reanalysis of [Zhang et al. data](https://www.pnas.org/doi/10.1073/pnas.21032401
 Cell cell communication analysis to identify tumor cell specific interactions.
 
 ### 06_ICELLNET_Intersection_results:
-Provide code used to generate Figure 3 and Supp. Figures 3.
+Provide code used to generate Figure 3 and  Figures S3.
 
 ### 07_CellChat_validation:
 Cell-cell communication analysis performed on original data, using [CellChat](https://github.com/sqjin/CellChat) inference method 
 
 ### 08_TCGA_KIRC_validation: 
-Script from downloaded TCGA data. Steps include matrix creation, data normalisation with DESeq2, and analysis for Supplementary Figure S3D generation.
+Script from downloaded TCGA data. Steps include matrix creation, data normalisation with DESeq2, and analysis for Figure S4 generation.

@@ -13,11 +13,10 @@ library(ComplexHeatmap)
 library(circlize)
 library(cowplot)
 
-work.dir= "~/Documents/PhD_TUMOR_ccRCC/BIOINFO/Young et al_2018_Kidney/"
+work.dir= work.dir
 dir.create(paste0(work.dir,"/analyses/1_QC&Integration_Harmony/"), recursive = TRUE, showWarnings = FALSE)
 output.dir=paste0(work.dir, "analyses/1_QC&Integration_Harmony/")
 input.dir=paste0(work.dir, "data/")
-setwd(dir = "~/Documents/PhD_TUMOR_ccRCC/BIOINFO/Young et al_2018_Kidney/")
 
 #Parameters 
 the.seed<-1337L
@@ -294,9 +293,9 @@ seurat$Celltype_Harmony[Idents(seurat)=="5"] = "Endoth"
 seurat$Celltype_Harmony[Idents(seurat)=="6"] = "Unassign"
 seurat$Celltype_Harmony[Idents(seurat)=="7"] = "Mac_C1QA"
 seurat$Celltype_Harmony[Idents(seurat)=="8"] = "Mono_c"
-seurat$Celltype_Harmony[Idents(seurat)=="9"] = "TumC_1"
+seurat$Celltype_Harmony[Idents(seurat)=="9"] = "ccRCC_1"
 seurat$Celltype_Harmony[Idents(seurat)=="10"] = "Treg"
-seurat$Celltype_Harmony[Idents(seurat)=="11"] = "TumC_2"
+seurat$Celltype_Harmony[Idents(seurat)=="11"] = "ccRCC_2"
 seurat$Celltype_Harmony[Idents(seurat)=="12"] = "Endoth"
 seurat$Celltype_Harmony[Idents(seurat)=="13"] = "NK_CD160"
 seurat$Celltype_Harmony[Idents(seurat)=="14"] = "Mono_nc"

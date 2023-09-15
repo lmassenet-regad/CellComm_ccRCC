@@ -1,5 +1,6 @@
 #Lucile Massenet-Regad 
 #Data analysis post integration 
+# last modified: 2023-09-15
 
 rm(list=ls())
 work.dir=work.dir
@@ -74,7 +75,7 @@ VlnPlot(sub2, features = c("CommMol1"), group.by = "Celltype_Harmony2", pt.size 
 seurat.markers2<- FindAllMarkers(sub2,only.pos = TRUE, min.pct = 0.1, 
                                  logfc.threshold = 0.25, assay = assay,
                                  recorrect_umi = FALSE)
-markers <- seurat.markers2 %>% dplyr::filter(p_val_adj<=0.05 )  %>% as.data.frame. # Supplementary Table S3A
+markers <- seurat.markers2 %>% dplyr::filter(p_val_adj<=0.05 )  %>% as.data.frame. # Supplementary Table S4
 
 #Add ccRCC1 and ccRCC2 label to original datasets
 seurat.test$Celltype_Harmony2=seurat.test$Celltype_Harmony
@@ -106,7 +107,7 @@ Idents(sub4)=paste0(sub4$Cell, "_", sub4$Tissue)
 markers4=FindMarkers(sub4, ident.1 ="ccRCC_Tum", ident.2 = "PT_Hty", only.pos = F, logfc.threshold = 0.25, 
                      min.pct = 0.1, assay = assay, recorrect_umi = FALSE)
 markers4$gene=rownames(markers4)
-markers4 =markers4 %>% filter(p_val_adj <0.05) # Supplementary Table S3B
+markers4 =markers4 %>% filter(p_val_adj <0.05) # Supplementary Table S4
 
 
 ## C- Cancer cell-specific communication genes analysis ##### 
@@ -141,7 +142,7 @@ fr.gene %>% filter(Freq==length(cellOI)) %>% pull(Var1)
 GenesOI = unique(c( as.vector(fr.gene %>% filter(Freq==length(cellOI)) %>% pull(Var1) )))
 GenesOI=GenesOI[-c(13,25)] # not among DEG PT_hty vs cancer cells
 
-#Figure 2D
+#Figure 2E
 Idents(seurat.tum) <- factor(x = Idents(seurat.tum), levels = unique(Idents(seurat.tum))[order(levels(Idents(seurat.tum)), decreasing = T)])
 DotPlot(seurat.tum,  features = unique(GenesOI), cols = c("blue", "red"),  dot.min=0.1, assay = "RNA", idents = Idents(seurat.tum), scale.by="size", ) + RotatedAxis() 
 

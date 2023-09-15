@@ -1,5 +1,5 @@
 #Lucile Massenet-Regad - scRNAseq ccRCC PhD project
-#Created 2021-05-27, last modified: 2022-10-26
+#Created 2021-05-27, last modified: 2023-09-15
 # ICELLNET on Zhang dataset
 
 rm(list=ls())
@@ -26,13 +26,13 @@ dir.create(path = paste0(work.dir,output.dir,'ICELLNET_', assay),
            recursive = TRUE, showWarnings = FALSE)
 
 
-db=as.data.frame(readxl::read_excel("~/Documents/ICELLNET/Databases/DB_ICELLNET_20220705.xlsx", sheet = 1))
+db=as.data.frame(readxl::read_excel("~/Documents/ICELLNET/Databases/DB_ICELLNET_20230412.xlsx", sheet = 1))
 db2=db
 db.name.couple=name.lr.couple(db2, type="Family")
 
 #### DATASET DEPENDANT STEP
 # load seurat object, retrieve matrix, average expression for each cluster
-seurat=readRDS("Seurat_Integrated_20220705.rds")
+seurat=readRDS("Seurat_Integrated_20230830.rds")
 
 Idents(seurat)=seurat$Celltype_CCA
 seurat.tum = subset(seurat, cells=which(seurat$Tissue=="Tum"))
@@ -129,12 +129,12 @@ int.spe <- function(LR.mat, CoI, thresh){  # function to determine specific inte
 }
 
 thresh=1.5
-LR.mat=as.data.frame(read.csv(paste0(paste0("analyses/ICELLNET_RNA/ICELLNET_sumScores_",direction,"_ALL_CELLS_2022-10-26.csv")))) 
+LR.mat=as.data.frame(read.csv(paste0(paste0("analyses/ICELLNET_RNA/ICELLNET_sumScores_",direction,"_ALL_CELLS_2023-08-30.csv")))) 
 rownames(LR.mat)=LR.mat$X
 head(LR.mat)
-LR.mat=LR.mat[,-c(1, 12)] # do not forget to remove X and Prolif, that here contains a lot of TumC -> to study TumC2 specificity
+LR.mat=LR.mat[,-c(1, 6, 13)] # do not forget to remove X and Prolif, and Epith, that are contaminated by Tumor cells-> to study TumC specificity
 
-test=int.spe(LR.mat, CoI="TumC", thresh=thresh)
+test=int.spe(LR.mat, CoI="ccRCC", thresh=thresh)
 #write.csv(test, paste0(work.dir,output.dir,'ICELLNET_', assay, "/LR_spé_tumC_",direction,"_thresh_",thresh,"_ALL_CELLS_", Sys.Date(),".csv"))
 test
 dim(test)

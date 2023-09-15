@@ -1,4 +1,5 @@
 # Created by Lucile Massenet-Regad, 16/09/2019
+# last modified: 2023-09-15
 
 
 library(dplyr)
@@ -29,7 +30,7 @@ duplicate.patient=sample.data$Case.ID[which(duplicated(as.factor(sample.data$Cas
 length(duplicate.patient) #790 --> OK (9055+790 = 9845 files in total)
 
 length(unique(as.factor(sample.data$Sample.ID)))
-duplicate.sampleID=sample.data$Sample.ID[duplicated(as.factor(sample.data$Sample.ID))] # different parts of tumor from same patient ?
+duplicate.sampleID=sample.data$Sample.ID[duplicated(as.factor(sample.data$Sample.ID))] 
 sample.data[which(sample.data$Sample.ID==duplicate.sampleID[1]),]
 length(duplicate.sampleID) #35 --> OK nb of files in total
 
@@ -142,7 +143,7 @@ rownames(norm.data)=res.sig$hgnc_symbol
 save(norm.data, file="TCGA_all_samples_normDESeq2.Rdata")
 
 
-# 5 - TCGA communication gene expression analysis - for Supplementary Figure S3D
+# 5 - TCGA communication gene expression analysis - for Supplementary Figure S4D
 #--------------------------------------------
 db_list=as.data.frame(readxl::read_excel("~/Desktop/LR_selected_DB.xlsx"))
 rownames(db_list)= db_list$Pair

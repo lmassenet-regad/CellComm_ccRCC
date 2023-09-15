@@ -1,5 +1,5 @@
-#Lucile Massenet-Regad - scRNAseq ccRCC PhD project
-#Created 2021-05-21, last modified: 2022-02-1
+#Lucile Massenet-Regad 
+#Created 2021-05-21, last modified: 2023-09-15
 #Data analysis - samples integration 
 
 rm(list=ls())
@@ -140,35 +140,24 @@ dev.off()
 # 5 - DEG - celltype annotation 
 #====================================
 DefaultAssay(seurat) <- "RNA" # SCT or RNA
-if (DefaultAssay(seurat)== "SCT"){
-  seurat <- PrepSCTFindMarkers(seurat) # correct counts when multiple SCT slots
-  seurat.markers<- FindAllMarkers(seurat, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 1, assay = "SCT")
-}else if (DefaultAssay(seurat)== "RNA"){
-  seurat.markers<- FindAllMarkers(seurat, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 1, assay = "RNA")
-} else stop ("DefaultAssay(seurat) should be RNA or SCT")
+seurat.markers<- FindAllMarkers(seurat, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 1, assay = "RNA")
 
-metascape <- seurat.markers %>% dplyr::filter(p_val_adj<=0.05 & avg_log2FC > 0.5)  %>% as.data.frame 
-write.csv(metascape, paste0(output.dir, "05_DEG_Harmony_Markers_res",res,"_RNAassay",Sys.Date(),".csv"))
+seurat.markers %>% dplyr::filter(p_val_adj<=0.05 & avg_log2FC > 0.5)  %>% as.data.frame  #Table S1
 
-seurat.markers %>% dplyr::filter(p_val_adj<=0.05 & avg_log2FC > 1) %>% arrange(cluster) %>% group_by(cluster) %>% top_n(20, avg_log2FC)  %>% View()
 
 #Manual gene list for annotation
-genes.notIMM=unique(c("PTPRC", "CA9","NDUFA4L2", "SLC17A3","LDHA", "NNMT", "ALDOB", "SLC34A1", "PDZK1IP1", "ANPEP",
-                      "SLC22A8", "SLC17A3", "SLC16A9", "SLC7A13", "SLC13A3","ACTA2", "RGS5", "NOTCH3", "MCAM", "PDGFRB", 
-                      "TAGLN", "PODXL","PTPRO","PTPRQ", "PTGDS", "CLIC5", "F3", "DCN", "MME", 
-                      "RNASE1","RAMP2", "ENG", "PECAM1", "PTPRB",  "PTPRB",  "VCAM1", "PLVAP", "SLC14A1", "SOST", "MEG3", "EHD3", "TGFBR2", 
-                      "KNG1", "UMOD", "CLDN16", "PCP4", "DEFB1","DUSP9", "SLC12A1", "ATP6V1G3","ATP6V0D2","EPCAM","LGALS3","TMEM213", "SLC4A1","SLC26A4", 
-                      "CLCNKB", "FXYD4", "AQP2", "AQP3", "CD24", "EPCAM", "CD9","HSD11B2","CALB1","MAL","CLDN8", "KCNJ1"))
-genes.IMM= unique(c("PTPRC","CD3D", "CD8A","CD8B", "NCAM1", "GNLY", "GZMB", "KLRD1","XCL1", "PRF1", "TRAC", "IL7R", "FOXP3", "TIGIT", 
-                    "CD14","LYZ", "S100A12", "FCGR3A", "FCGR3B", "FCGR1A", "CD68", "FCGR2A", "APOE", "ITGAM", 
-                    "CST3", "ITGAX", "IRF7", "IRF8", "CLEC4C", "TCF4", "LILRA4", "MS4A1", "CD79A", "CD19", "IGHM",
-                    "IGHG2", "JCHAIN", "KIT", "MS4A2", "CPA3", "TPSAB1", "S100A8", "S100A9", "FCGR3B", "CSF3R", "MKI67", "TOP2A", "PCNA"))
+genes.assignment=c("CD3D", "CD4", "IL7R", "FOXP3", "CD8A", "GZMK",  "MKI67", "TOP2A", "GNLY", "KLRD1", "NCAM1", 
+              "MS4A1", "CD79A",  "IGHM", "JCHAIN", 
+              "C1QA", "MRC1", "CD14", "LYZ","FCGR3A", "HLA-DRA",
+              "CD1C", "IDO1", "CLEC9A", "IRF7", "CLEC4C", "LILRA4",
+              "KIT", "TPSAB1", "S100A8", "S100A9", "FCGR3B", 
+              "ALDOB", "SLC34A1", "PDZK1IP1", "ANPEP", 
+              "CA9","NDUFA4L2","NNMT", "EGLN3", 
+              "EPCAM", "DEFB1", "UMOD", 
+              "ENG", "PECAM1", "PTPRB",
+              "PDGFRB", "ACTA2", "RGS5")
 
-pdf(paste0(output.dir, "05_DotPlot_CellAssignment_",res,"_PC",n.dims, ".pdf"), width = 15, height = 9,useDingbats = F)
-DotPlot(seurat, features=as.vector(genes.notIMM), assay = "RNA") + RotatedAxis() 
-DotPlot(seurat, features=as.vector(genes.IMM), assay = "RNA") + RotatedAxis() 
-dev.off()
-
+DotPlot(seurat, features=as.vector(genes.assignment), assay = "RNA") + coord_flip() # Figure 1C
 
 #Cluster assignment - res 1
 seurat$Celltype_Harmony = NA
@@ -201,8 +190,61 @@ seurat$Celltype_Harmony[Idents(seurat)=="22"] = "Fibro"
 saveRDS(seurat, paste0("data/ccRCC_nCount1000_integrated_Harmony_res1_PC50_",Sys.Date(),".rds"))
 
 
+
 #==========================================================================================#
-######                         B: Paper figures                                       ######
+######  B: Differential analysis for each cluster to update ICELLNET database         ######
+#==========================================================================================#
+
+# All cell types except cancer cells - Conduct differential analyses between tissue
+db=as.data.frame(readxl::read_excel("~/Documents/ICELLNET/Databases/DB_ICELLNET_20210830.xlsx"))
+mol=unique(c(unique(db$`Ligand 1`), unique(db$`Ligand 2`), unique(db$`Receptor 1`),unique(db$`Receptor 2`),unique(db$`Receptor 3`)))
+
+seurat.com = DietSeurat(seurat, features = mol, data = TRUE, scale.data =T,  counts = T, assays = c(assay) )
+Idents(seurat.com)=seurat.com$Celltype_Harmony
+cellOI=unique(Idents(seurat.com))[-c(6, 10)] # Exclude cluster of tumor cells and prolif
+
+markers.deg=data.frame()
+for (cell in cellOI){
+  seurat.sub=subset(seurat.com, cells=which(seurat.com$Celltype_Harmony==cell))
+  Idents(seurat.sub)=seurat.sub$Tissue
+  sub.marker=FindMarkers(object = seurat.sub, 
+                         ident.1 = "Tum", ident.2 = "Hty", 
+                         logfc.threshold = 0.1, min.pct =0.1, 
+                         recorrect_umi = FALSE) 
+  sub.marker$gene=rownames(sub.marker)
+  sub.marker$diff.pct=sub.marker$pct.1 - sub.marker$pct.2
+  sub.marker=sub.marker%>% filter(p_val_adj<0.1)
+  write.csv(sub.marker, file=paste0(output.dir, "DEG_TUMvsHTY_",assay, "/DEG_",cell,"_TUMvsHTY_inDBicellnet20210830",Sys.Date(),".csv"))
+  if (dim(sub.marker)[[1]]>0){
+    sub.marker$Cell=cell
+    markers.deg=rbind(markers.deg,sub.marker)
+  }
+  
+}
+write.csv(markers.deg, file=paste0(output.dir, "DEG_TUMvsHTY_",assay, "/ALL_summaryDEG_TUMvsHTY_inDBicellnet20210830_",Sys.Date(),".csv"))
+
+
+# INTERSECTION DEG all genes with NATMI file -> to identify putative missing interactions
+#============================================================================#
+NATMIdb=readxl::read_excel("NATMI_DB_41467_2020_18873_MOESM4_ESM.xlsx", sheet="literature_support") #From NATMI paper, PMID 33024107 - Supplementary Data 1 
+NATMIgene=unique(c(NATMIdb$`Ligand gene symbol`), c(NATMIdb$`Receptor gene symbol`))
+
+# intersection of previously DEG analyses (cells from tumors versus juxtatumors, for each cell type) with NATMI DB
+ALL_tum_hty_deg=read.csv("ALL_summaryDEG_TUMvsHTY_2022-02-15.csv")
+ALL_tum_hty_deg=ALL_tum_hty_deg %>% filter(ALL_tum_hty_deg$p_val_adj<0.05 & abs(ALL_tum_hty_deg$avg_log2FC)>0.25)
+intersect(ALL_tum_hty_deg$gene, NATMIgene) 
+setdiff(intersect(ALL_tum_hty_deg$gene, NATMIgene), mol)
+
+
+#intersection of NATMI DB with the list of cancer DEG (ccRCC2 compared to juxtatumoral proximal tubules) 
+TumCdeg=read.csv("DEG_TumC2_CA9_Tum_vs_PT_Hty_logFC0.25_minpct0.1_padj0.05.csv") #  Supplementary Table S4
+TumCdeg=TumCdeg %>% filter(TumCdeg$p_val_adj<0.05 & abs(TumCdeg$avg_log2FC)>0.25)
+intersect(TumCdeg$gene, NATMIgene) # Comm molecules TumC2 DEG 
+setdiff(intersect(TumCdeg$gene, NATMIgene), mol)
+
+
+#==========================================================================================#
+######                         C: Paper figures                                       ######
 #==========================================================================================#
 
 library(Seurat)
@@ -211,9 +253,17 @@ library(ggplot2)
 library(ggpattern)
 
 #### Figure 1B ####
-DimPlot(seurat, reduction="harmony_umap", label=T, group.by="RNA_snn_res.1") + NoLegend() 
+DimPlot(seurat, reduction="harmony_umap", label=T, group.by="RNA_snn_res.1") + NoLegend() # Figure 1B
+DimPlot(seurat, reduction="harmony_umap", label=F, split.by ="Tissue") #Figure 1B
 
-#### Figure 1C & 1D ####
+#### Figure 1C ####
+levels(seurat) <- c("0","16","1","12","4","5","10","11","20",
+                    "15", "6","7","8","19", "18", "13","14",
+                    "2","3","9","17", "21", "22")
+
+DotPlot(seurat, features=as.vector(genes.final), assay = "RNA") + coord_flip()
+
+#### Figure 1D-1E ####
 listes_goi=readxl::read_excel("~/Liste_broad_communication_molecules.csv")
 
 meta.data=FetchData(object = seurat, slot="data", assay="RNA",  vars = c("Tissue", "Celltype_Harmony"))
@@ -234,13 +284,13 @@ for (i in colnames(listes_goi)){
   data.oi= data.tum %>% filter(rownames(data) %in% as.character(unlist(listes_goi[i]))) 
   metagene=data.frame("Sample.ID"=colnames(data.oi) ,"score"=colSums(data.oi)) 
   metagene=left_join(metagene, meta.data)
-  median.matrix = metagene %>%
+  mean.matrix = metagene %>%
     group_by(Celltype_Harmony, Tissue, .add=T) %>%
-    summarise_if(is.numeric, median, na.rm=TRUE)
-  rownames(median.matrix)=paste0(median.matrix$Celltype_Harmony)
-  median.matrix=median.matrix[names,]
+    summarise_if(is.numeric, mean, na.rm=TRUE)
+  rownames(mean.matrix)=paste0(mean.matrix$Celltype_Harmony)
+  mean.matrix=mean.matrix[names,]
   
-  score.mat[,i]=median.matrix$score
+  score.mat[,i]=mean.matrix$score
 }
 
 score.mat= score.mat[complete.cases(score.mat),]
@@ -248,14 +298,14 @@ heat.data = apply(score.mat, MARGIN=2, FUN = function(x) (x-mean(x))/sd(x)) # ce
 
 ht1=ComplexHeatmap::Heatmap(t(heat.data), cluster_rows = T, cluster_columns = T ,
                             show_column_dend = TRUE , show_row_dend = T, show_column_names = T,  show_row_names = T, name = "z-score")
-ht1 # Figure 1C
+ht1 # Figure 1D
 ht1 = draw(ht1)
 rows=row_dend(ht1) 
 cols=column_dend(ht1)
 order_row=rownames(t(heat.data))[unlist(rows)]
 order_cols=colnames(t(heat.data))[unlist(cols)]
 
-# For Figure 1D
+# For Figure 1E
 score.mat2=matrix(ncol = dim(listes_goi)[2], nrow =  length(names))
 colnames(score.mat2)=colnames(listes_goi)
 rownames(score.mat2)=names
@@ -268,15 +318,15 @@ for (i in colnames(listes_goi)){
   data.oi= data %>% filter(rownames(data) %in% as.character(unlist(listes_goi[i])))
   metagene=data.frame("Sample.ID"=colnames(data.oi) ,"score"=colSums(data.oi)) 
   metagene=left_join(metagene, meta.data)
-  median.matrix = metagene %>%
+  mean.matrix = metagene %>%
     group_by(Celltype_Harmony, Tissue, .add=T) %>%
-    summarise_if(is.numeric, median, na.rm=TRUE)
+    summarise_if(is.numeric, mean, na.rm=TRUE)
   
-  test=reshape2::dcast(median.matrix, formula = Celltype_Harmony ~ 
+  test=reshape2::dcast(mean.matrix, formula = Celltype_Harmony ~ 
                          Tissue , value.var = "score", drop = T) 
   rownames(test)= test$Celltype_Harmony
 
-  test["ccRCC", "Hty"]=median(x=metagene$score[which(metagene$Celltype_Harmony %in% c("PT_GPX3", "PT_MT1G") & metagene$Tissue =="Hty")])
+  test["ccRCC", "Hty"]=mean(x=metagene$score[which(metagene$Celltype_Harmony %in% c("PT_GPX3", "PT_MT1G") & metagene$Tissue =="Hty")])
   metagene.ccRCC=filter(metagene, (metagene$Celltype_Harmony %in% c("PT_GPX3", "PT_MT1G") & metagene$Tissue =="Hty") | (metagene$Celltype_Harmony=="ccRCC"))
   
   test$ratio=test$Tum/test$Hty
@@ -301,20 +351,18 @@ ht3=ComplexHeatmap::Heatmap(t(log2score), row_order = order_row, column_order = 
                                 grid.text("**", x, y)
                               }
                             }) #highlight significant and abs(logFC) >0.25
-ht3 # Figure 1D
+ht3 # Figure 1E
 
 
 
-
-
-#### Supp Figure S1C #### 
+#### Figure S1C #### 
 display.brewer.pal(n = 6, name = 'RdBu', )
 brewer.pal(n = 6, name = 'RdBu')
 DimPlot(seurat, reduction = "harmony_umap", group.by = 'orig.ident', pt.size = 0.1, label=FALSE,
         cols = c("LM022_Hty"="#2166AC","LM022_Tum"="#B2182B", "LM027_Hty"= "#67A9CF", 
                  "LM027_Tum"="#EF8A62", "LM029_Hty"=  "#D1E5F0"  , "LM029_Tum"="#FDDBC7" ))
 
-#### Supp Figure S1D #### 
+#### Figure S1D #### 
 pt=as.data.frame(table(seurat$Celltype_Harmony, seurat$Tissue, seurat$Patient))
 pt$Var4=paste0(pt$Var2, "_", pt$Var3)
 
@@ -325,15 +373,4 @@ ggplot(pt , aes(x = Var1 , y = Freq , fill = Var4)) +
   ylab("Proportion or each sample") +
   theme(legend.title = element_blank(), axis.text.x = element_text(angle=45, hjust = 1))+
   scale_fill_brewer(palette = "RdBu", direction = -1)
-
-
-#### Supp Figure S1E #### 
-Idents(seurat)=seurat$RNA_snn_res.1
-markers=read.csv("05_DEG_Harmony_Markers_res1_RNAassay2022-02-08.csv", header = T)
-rownames(markers)=markers$X
-markers=markers[,-1]
-markers %>% filter(p_val_adj<=0.05 & avg_log2FC > 1) %>% group_by(cluster) %>% top_n(3, avg_log2FC) -> filter.markers
-seurat.test.averages = AverageExpression(seurat, return.seurat = TRUE)
-seurat.test.averages = ScaleData(seurat.test.averages, features = filter.markers$gene, assay = "RNA")
-DoHeatmap(seurat.test.averages, features = filter.markers$gene, assay = "RNA", raster = FALSE, draw.lines = FALSE) + scale_fill_gradientn(colors = c("blue", "white", "red")) 
 

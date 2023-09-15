@@ -3,7 +3,6 @@
 
 
 rm(list=ls())
-work.dir= "~/Documents/PhD_TUMOR_ccRCC/BIOINFO/SINGLE_CELL_Lucile_ccRCC/"
 setwd(dir = work.dir)
 
 output.dir="analyses/3_Downstream_analysis/"
@@ -17,7 +16,7 @@ options(stringsAsFactors = FALSE)
 
 
 # Load seurat object, retrieve matrix, average expression for each cluster
-seurat=readRDS("data/ccRCC_LM022_LM027_LM029_nCount1000_integrated_Harmony_res1_PC50_2022-02-08.rds")
+seurat=readRDS("data/ccRCC_nCount1000_integrated_Harmony_res1_PC50_2022-02-08.rds")
 Idents(seurat)=seurat$Celltype_Harmony2
 
 seurat.tum = subset(seurat, cells=which(seurat$Tissue=="Tum"))

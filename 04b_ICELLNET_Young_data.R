@@ -44,13 +44,13 @@ data <- sc.data.cleaning(object = seurat.tum, db = db, filter.perc =10, save_fil
 data.icell= as.data.frame(gene.scaling(data, n=1, db=db))
 
 # central cell 1
-CC2="TumC_2"
+CC2="ccRCC_2"
 target=data.frame("ID"=colnames(data.icell), "Cell_type"=colnames(data.icell), "Class"=colnames(data.icell))
 rownames(target)=target$ID
 
 PC=c("PlasmaC", "Treg","CD4T",  "CD8T", "Unassign_T", "NK", "NK_CD160", "Prolif",
      "MMAC_1", "MMAC_2", "MMAC_3", "Mast",
-     "Epith","PT_GPX3", "PT_MT1G","TumC_1","TumC_2", "Endoth","Fibro")
+     "Epith","PT_GPX3", "PT_MT1G","ccRCC_1","ccRCC_2", "Endoth","Fibro")
 
 
 #direction communication score
@@ -133,7 +133,7 @@ LR.mat=as.data.frame(read.csv(paste0(paste0( output.dir,"/ICELLNET_RNA/ICELLNET_
 rownames(LR.mat)=LR.mat$X
 head(LR.mat)
 LR.mat=LR.mat[,-c(1,18)] # do not forget to remove X and TumC1-> to study TumC2 specificity
-test=int.spe(LR.mat, CoI="TumC_2", thresh=thresh)
+test=int.spe(LR.mat, CoI="ccRCC_2", thresh=thresh)
 write.csv(test, paste0(work.dir,output.dir,'ICELLNET_', assay, "/LR_spé_tumC_",direction,"_thresh_",thresh,"_ALL_CELLS_", Sys.Date(),".csv"))
 test
 dim(test)

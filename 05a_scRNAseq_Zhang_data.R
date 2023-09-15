@@ -1,15 +1,15 @@
-#Lucile Massenet-Regad - scRNAseq ccRCC PhD project
-#Created 2021-09-17, last modified: 2021-11-23
-#Integration - Comparison cohort to LM022 LML027 and Young dataset
+#Lucile Massenet-Regad 
+# last modified: 2023-09-15
 
 rm(list=ls())
-setwd(dir = "~/Documents/PhD_TUMOR_ccRCC/BIOINFO/Zhang et al, 2021, PNAS/")
 
 library(clustree)
 library(Seurat)
 library(ggplot2)
 library(dplyr)
 library(gridExtra)
+the.seed=1337L
+n.dims=30
 
 # # files <- list.files("GSE159115_csv/")
 # # meta.all=readxl::read_excel("Metadata.xlsx")
@@ -135,72 +135,28 @@ for(i in 1:length(Seurat)){
 }
 
 
-## 2 - Integration using Seurat CCA
+## 2 - Integration using Harmony 
+kidney.combined = merge(Seurat[[1]],   c(Seurat[[2]],   Seurat[[3]],   Seurat[[4]], 
+                                         Seurat[[5]],   Seurat[[6]],   Seurat[[7]],
+                                         Seurat[[8]],   Seurat[[9]],   Seurat[[10]], Seurat[[11]]),  project = "combined")
 
-kidney.anchors <- FindIntegrationAnchors(object.list = Seurat, dims=1:50)
-kidney.combined <- IntegrateData(anchorset = kidney.anchors, dims = 1:50)
-saveRDS(kidney.combined, "Seurat_Integrated_20220217.rds")
 
-rm(kidney.anchors)
-rm(Seurat)
-#rm(data)
+kidney.combined<- NormalizeData(kidney.combined, normalization.method = "LogNormalize", scale.factor = 10000)
+kidney.combined <- FindVariableFeatures(kidney.combined, selection.method = "vst", nfeatures = 2000)
+kidney.combined <- ScaleData(kidney.combined)
+
+kidney.combined <- RunPCA(kidney.combined, npcs = n.dims+20, verbose = FALSE)
+ElbowPlot(kidney.combined, ndims = 100) #n=30 fine
+
+kidney.combined <- RunUMAP(kidney.combined, dims = 1:n.dims, seed.use = the.seed)
+kidney.combined <- suppressWarnings(harmony::RunHarmony(object =kidney.combined,  group.by.vars="orig.ident",
+                                                        reduction = "pca", assay.use="RNA", dims.use=1:n.dims+20, plot_convergence = T, verbose = T))
+kidney.combined <- RunUMAP(kidney.combined, reduction = "harmony", dims = 1:n.dims, reduction.name = "harmony_umap")
 
 # Apply Seurat pipeline
 #===================================
-
-kidney.combined = readRDS( "Seurat_Integrated_20220217.rds")
-kidney.combined <- ScaleData(kidney.combined, verbose = FALSE)
-kidney.combined <- RunPCA(kidney.combined, npcs = 100, verbose = FALSE)
-
-DefaultAssay(kidney.combined) <- "integrated"
-
-pdf(paste0("analyses/clustering/Clustering_CCA_Zhang_",Sys.Date(),".pdf"),useDingbats = F)
-VizDimLoadings(object = kidney.combined, dims = 1:2)
-DimHeatmap(object = kidney.combined, dims = 1:15, cells = 500, balanced = TRUE)
-ElbowPlot(object =kidney.combined,ndims = 100)  #50 enough to explain much variance 
-dev.off()
-
-kidney.combined <- FindNeighbors(object = kidney.combined, dims = 1:50)
-
-
-# Clustree - 2021-09-20
-# ==============================================================================
-#Silhouette
-seurat.test=kidney.combined
-
-for (res in seq(0.1,1.4,0.1)){
-  #res=0.1
-  seurat.test <- FindClusters(object = seurat.test, resolution = res)
-
-# Clusttree
-pdf(paste0("analyses/clustering/Clustering_CCA_Clustree_Zhang_PC50_",Sys.Date(),".pdf"),useDingbats = F,height = 15,width=10)
-exprs <- "data"
-prefix = "integrated_snn_res."
-args <- list()
-gene_names <- rownames(seurat.test@assays$RNA@data)
-for (node_aes in c("node_colour", "node_size", "node_alpha")) {
-  if (node_aes %in% names(args)) {
-    node_aes_value <- args[[node_aes]]
-    if (node_aes_value %in% gene_names) {
-      aes_name <- paste0(exprs, "_", node_aes_value)
-      seurat.test@meta.data[aes_name] <-
-        slot(seurat.test, exprs)[node_aes_value, ]
-      args[[node_aes]] <- aes_name
-    }
-  }
-}
-args$x <- seurat.test@meta.data
-args$prefix <- prefix
-do.call(clustree, args)
-dev.off()
-}
-
-# 4- UMAP and clustering 
-#====================================
-DefaultAssay(kidney.combined)="integrated" #important for umap and findcluster if integration performed
-kidney.combined <- RunUMAP(kidney.combined, dims = 1:50)
+kidney.combined <- FindNeighbors(object = kidney.combined, dims = 1:n.dims, reduction = "harmony")
 kidney.combined <- FindClusters(object = kidney.combined, resolution = 0.5)
-DimPlot(kidney.combined, reduction = "umap", label=T)
 
 
 kidney.combined$Tissue=NA
@@ -221,41 +177,45 @@ kidney.combined$Patient[which(kidney.combined$orig.ident %in% c( "SI_23843"))]="
 # 5 - celltype annotation
 #====================================
 DefaultAssay(kidney.combined) <- "RNA"
-
 seurat.markers<- FindAllMarkers(kidney.combined,only.pos = TRUE, min.diff.pct = 0.25, logfc.threshold = 0.5)
 metascape <- seurat.markers %>% dplyr::filter(p_val_adj<=0.05 & avg_log2FC > 1)  %>% as.data.frame 
-write.csv(metascape, paste0("analyses/clustering/Integration_CCA_Markers__Zhang_res0.6_",Sys.Date(),".csv"))
+write.csv(metascape, paste0("analyses/clustering/Integration_CCA_Markers__Zhang_res0.5_",Sys.Date(),".csv"))
 
-kidney.combined$Celltype_CCA = NA
+Idents(kidney.combined)= kidney.combined$RNA_snn_res.0.5
+kidney.combined$Celltype_Harmony = NA
 
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="0"] = "TumC"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="1"] ="MMAC_1"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="2"] = "TumC"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="3"] = "Endoth_PLVAP"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="4"] = "Fibro"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="5"] ="T_cells"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="6"] = "TumC"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="7"] = "Endoth_ACKR1"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="8"] = "DC"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="9"] = "Prolif"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="10"] =  "MMAC_2"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="11"] = "Endoth_PDGFRB"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="12"] = "PlasmaC"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="13"] = "TumC"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="14"] = "NK"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="15"] = "TumC"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="16"] = "TumC"
-kidney.combined$Celltype_CCA[Idents(kidney.combined)=="17"] = "Mast"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="0"] = "MMAC"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="1"] ="ccRCC"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="2"] = "ccRCC"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="3"] = "Endoth_PLVAP"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="4"] = "Fibro"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="5"] ="ccRCC"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="6"] = "T_cell"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="7"] = "ccRCC"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="8"] = "Endoth_ACKR1"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="9"] = "DC"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="10"] = "Prolif"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="11"] = "PT"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="12"] = "Epith"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="13"] = "Endoth_PDGFRB"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="14"] = "NK"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="15"] = "Endoth_CLDN5"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="16"] = "Endoth_Juxta"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="17"] = "PlasmaC"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="18"] = "PT"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="19"] = "Mast"
+kidney.combined$Celltype_Harmony[Idents(kidney.combined)=="20"] = "unassigned"
+
 
 # UMAP and clustering graph + SAVE DATA 
 
-pdf(file = paste0("analyses/clustering/CCA_UMAP_","res0.5","_PC50_",Sys.Date(),".pdf"), useDingbats = F, width = 10, height = 10 )
-DimPlot(kidney.combined, reduction = "umap", label = T, label.size = 4) + labs(title= "res 0.5")
-DimPlot(kidney.combined, reduction = "umap", group.by = "orig.ident", label = T, label.size = 3) 
-DimPlot(kidney.combined, reduction = "umap", group.by = "Tissue", label = F, label.size = 3) 
-DimPlot(kidney.combined, reduction = "umap", group.by = "Patient", label = F, label.size = 3) 
+pdf(file = paste0("analyses/clustering/Harmony_UMAP_","res0.5","_PC50_",Sys.Date(),".pdf"), useDingbats = F, width = 10, height = 10 )
+DimPlot(kidney.combined, reduction = "harmony_umap", group.by = "orig.ident", label = T, label.size = 3) 
+DimPlot(kidney.combined, reduction = "harmony_umap", group.by = "Tissue", label = F, label.size = 3) 
+DimPlot(kidney.combined, reduction = "harmony_umap", group.by = "Patient", label = F, label.size = 3) 
 
-pt=as.data.frame(table(kidney.combined$Celltype_CCA, kidney.combined$Tissue))
+
+pt=as.data.frame(table(kidney.combined$Celltype_Harmony, kidney.combined$Tissue))
 ggplot(pt, aes(x = Freq , y = Var1 , fill = Var2)) +
   theme_bw(base_size = 15) +
   geom_col(position = "fill", width = 0.5) +
@@ -263,7 +223,7 @@ ggplot(pt, aes(x = Freq , y = Var1 , fill = Var2)) +
   xlab("Proportion or each sample") +
   theme(legend.title = element_blank(), axis.text.x = element_text(angle=0, hjust = 1)) 
 
-pt=as.data.frame(table(kidney.combined$Celltype_CCA, kidney.combined$Patient))
+pt=as.data.frame(table(kidney.combined$Celltype_Harmony, kidney.combined$Patient))
 ggplot(pt, aes(x = Freq , y = Var1 , fill = Var2)) +
   theme_bw(base_size = 15) +
   geom_col(position = "fill", width = 0.5) +
@@ -271,11 +231,11 @@ ggplot(pt, aes(x = Freq , y = Var1 , fill = Var2)) +
   xlab("Proportion or each sample") +
   theme(legend.title = element_blank(), axis.text.x = element_text(angle=0, hjust = 1)) 
 
-DimPlot(kidney.combined, reduction = "umap", label=T)
-DimPlot(kidney.combined , reduction = "umap", group.by = "integrated_snn_res.0.5")
-DimPlot(kidney.combined , reduction = "umap", group.by = "Celltype_CCA", label=T)
+DimPlot(kidney.combined, reduction = "harmony_umap", label=T)
+DimPlot(kidney.combined , reduction = "harmony_umap", group.by = "RNA_snn_res.0.5")
+DimPlot(kidney.combined , reduction = "harmony_umap", group.by = "Celltype_Harmony", label=T)
 dev.off()
 
-saveRDS(kidney.combined, "Seurat_Integrated_20220705.rds")
+saveRDS(kidney.combined, "Seurat_Integrated_Harmony_20230830.rds")
 
 
