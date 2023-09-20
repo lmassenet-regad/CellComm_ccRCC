@@ -265,6 +265,7 @@ DotPlot(seurat, features=as.vector(genes.final), assay = "RNA") + coord_flip()
 
 #### Figure 1D-1E ####
 listes_goi=readxl::read_excel("~/Liste_broad_communication_molecules.csv")
+GOI=c(listes_goi$Cytokine,listes_goi$Chemokine,  listes_goi$Checkpoint, listes_goi$Growth_factor,  listes_goi$Cell_adhesion) %>% unique() %>% na.omit() %>% as.vector()
 
 meta.data=FetchData(object = seurat, slot="data", assay="RNA",  vars = c("Tissue", "Celltype_Harmony"))
 meta.data$Sample.ID=rownames(meta.data)
