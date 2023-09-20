@@ -25,10 +25,8 @@ library(clusterProfiler)
 
 ###### List of molecules of interest ###### 
 #===================================#
-all=unique(c(unique(receptors$Symbol), unique(cytokines$Symbol), unique(chemokines$Symbol),unique(checkpoints$Symbol)))
 db=as.data.frame(readxl::read_excel("~/Documents/ICELLNET/Databases/DB_ICELLNET_20230412.xlsx"))
-mol=unique(c(unique(db$`Ligand 1`), unique(db$`Ligand 2`), unique(db$`Receptor 1`),unique(db$`Receptor 2`),unique(db$`Receptor 3`)))
-GOI=unique(c(mol,all)) 
+GOI=unique(c(unique(db$`Ligand 1`), unique(db$`Ligand 2`), unique(db$`Receptor 1`),unique(db$`Receptor 2`),unique(db$`Receptor 3`)))
 
 ###### Load data ###### 
 #======================#
@@ -50,6 +48,11 @@ sub2 <- RunUMAP(sub2, dims = 1:50, reduction = "harmony2", reduction.name = "har
 sub2 <- FindNeighbors(sub2, dims = 1:50, reduction = "harmony2")
 sub2  <- FindClusters(sub2, resolution = 0.1)
 
+## Define ccRCC1 and ccRCC2 cells 
+seurat.test$Celltype_Harmony2=seurat.test$Celltype_Harmony
+seurat.test$Celltype_Harmony2[WhichCells(sub2, idents = c("0"))]="ccRCC1"
+seurat.test$Celltype_Harmony2[WhichCells(sub2, idents = c("1"))]="ccRCC2"
+
 DimPlot(sub2, reduction = "harmony2_umap", label=T) # Figure 2A
 
 FeatureScatter(sub2, feature1 = "nFeature_RNA", feature2 = "percent.rb") # Figure 2B
@@ -60,7 +63,7 @@ VlnPlot(sub2, features = c("CA9"), group.by = "Celltype_Harmony2",
 ) + ggpubr::stat_compare_means(comparisons = list(c("ccRCC1", "ccRCC2")), label = "p.format") + #"p.signif" or "p.format"
   theme(axis.text.x = element_text(angle = 0, hjust=0.5)) # Figure 2C - left
 
-comm.mol=intersect(unique(mol), rownames(sub2))
+comm.mol=intersect(unique(GOI), rownames(sub2))
 GOIinSeurat=list(rownames(sub2)[which(rownames(sub2)%in%GOI)])
 sub2=AddModuleScore(sub2, features = GOIinSeurat, name = "CommMol")
 VlnPlot(sub2, features = c("CommMol1"), group.by = "Celltype_Harmony2", pt.size = 0.1, y.max = 0.2) + 
@@ -83,8 +86,6 @@ seurat.test$Celltype_Harmony2[WhichCells(sub2, idents = c("0"))]="ccRCC1"
 seurat.test$Celltype_Harmony2[WhichCells(sub2, idents = c("1"))]="ccRCC2"
 
 pt=as.data.frame(table(Idents(sub2), sub2$orig.ident))
-pt$Var2=factor(pt$Var2, levels =c("LM022_Tum","LM027_Tum", "LM029_Tum","LM022_Hty","LM027_Hty","LM029_Hty"))
-
 ggplot(pt, aes(x = Freq , y = Var1 , fill = Var2)) +
   theme_bw(base_size = 15) +
   geom_col(position = "fill", width = 0.5) +
@@ -123,7 +124,6 @@ markers=data.frame()
 cellOI=unique(Idents(seurat.tum.com))[-c(6,12)] #  to remove tumor cells clusters
 
 for (cell in cellOI ){
-  print(cell)
   markers3a=FindMarkers(seurat.tum.com, ident.1 = c("ccRCC2"), ident.2 = cell , 
                         assay = assay, min.pct = 0.05, logfc.threshold = 0.0, only.pos = T)
   markers3a$gene=rownames(markers3a)
