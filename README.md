@@ -1,6 +1,6 @@
 # CellComm_ccRCC
 
-This repository hosts the R scripts used in the paper "Large-scale analysis of cell-cell communication reveals angiogenin-dependent tumor progression in clear cell renal cell carcinoma".
+This repository hosts the R scripts used in the [paper](https://www.cell.com/iscience/fulltext/S2589-0042(23)02444-6) "Large-scale analysis of cell-cell communication reveals angiogenin-dependent tumor progression in clear cell renal cell carcinoma".
 
 ## Index:
 ICELLNET ligand/receptor interaction database used in the scripts can be found on [ICELLNET github](https://github.com/soumelis-lab/ICELLNET).
